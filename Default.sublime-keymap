@@ -1,0 +1,4 @@
+[
+	{ "keys": ["ctrl+alt+d"], "command": "devdocs_show_definition"},
+	{ "keys": ["ctrl+alt+s"], "command": "devdocs_search_symbol"},
+]

@@ -1,0 +1,6 @@
+[
+    {"caption": "Devdocs: Show Definition", "command": "devdocs_show_definition"},
+    {"caption": "Devdocs: Search Symbol", "command": "devdocs_search_symbol"},
+    {"caption": "Devdocs: All Languages", "command": "devdocs_show_all_languages"},
+    {"caption": "Devdocs: Set Default Version", "command": "devdocs_set_default_version"},
+]
