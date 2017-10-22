@@ -11,7 +11,6 @@ import urllib
 from Default import symbol as sublime_symbol
 from html.parser import HTMLParser
 
-languages_index = {}
 package_name = "Devdocs"
 setting_file = package_name + '.sublime-settings'
 entities = {
@@ -24,6 +23,7 @@ language_alias = {
 all_languages = None
 all_languages_display = None
 installed_languages = None
+languages_index = {}
 
 installed_tip = {
     'toggle': 'Installed, click to uninstall',
@@ -37,10 +37,6 @@ uninstalled_tip = {
 currentSettings = None
 popup_default_max_width = 800
 popup_default_max_height = 300
-
-input_symbol = None
-selected_language_type = None
-selected_language_version = None
 
 
 def plugin_loaded():
@@ -126,6 +122,20 @@ def isInstalled(language, update=False):
         return False
 
 
+def setSyntaxAlias(syntax, alias):
+    syntax_alias = getSetting('syntax_alias', {})
+    syntax_alias[syntax] = alias
+    setSetting('syntax_alias', syntax_alias)
+
+
+def getSyntaxAlias(syntax):
+    syntax_alias = getSetting('syntax_alias', {})
+    if syntax_alias.get(syntax):
+        return syntax_alias.get(syntax)
+    else:
+        return False
+
+
 def setLanguageDefaultVersion(language, version):
     language_default_version = getSetting('language_default_version', {})
     language_default_version[language] = version
@@ -184,6 +194,10 @@ def parseLanguageName(language, forPath=False):
 def parseViewLanguage(view):
     syntax = view.settings().get('syntax')
     print("Now view syntax " + syntax)
+    alias = getSyntaxAlias(syntax)
+    if alias:
+        print("Found view syntax alias " + alias)
+        return getLanguageDefaultVersion(alias), alias
     matchObj = re.search(r'([^\/]*)\.', syntax)
     if matchObj:
         language = matchObj.group(1).lower()
@@ -283,39 +297,39 @@ def extract(tar_path, target_path, mode='r:gz'):
         return False
 
 
-def uninstallLanguage(language):
-    language = parseLanguageName(language)
-    print('Uninstall language ' + language)
-    language_path = getDocsPath(True) + "/" + language
+def uninstallLanguage(languageWithVersion):
+    languageForPath = parseLanguageName(languageWithVersion, True)
+    print('Uninstall languageWithVersion ' + languageWithVersion)
+    language_path = getDocsPath(True) + "/" + languageForPath
     if os.path.isdir(language_path):
         shutil.rmtree(language_path)
-    if installed_languages.get(language) != None:
-        installed_languages.pop(language)
-    if languages_index.get(language) != None:
-        languages_index.pop(language)
+    if installed_languages.get(languageWithVersion) != None:
+        installed_languages.pop(languageWithVersion)
+    if languages_index.get(languageWithVersion) != None:
+        languages_index.pop(languageWithVersion)
     saveInstalledLanguages()
 
 
-def installLanguage(language=None):
-    global selected_language_version
-    if not language:
-        language = selected_language_version
-    if not language:
+def installLanguage(languageWithVersion):
+    if not languageWithVersion:
         return False
 
-    language = parseLanguageName(language)
-    print('Install language ' + language)
+    uninstallLanguage(languageWithVersion)
 
-    name = language.replace('@', '~')
+    languageWithVersion = parseLanguageName(languageWithVersion)
+    print('Install languageWithVersion ' + languageWithVersion)
+
+    languageForPath = languageWithVersion.replace('@', '~')
     err = None
     try:
-        url = 'http://dl.devdocs.io/' + name + '.tar.gz'
+        url = 'http://dl.devdocs.io/' + languageForPath + '.tar.gz'
         user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
-        print('downloading ' + url)
+        print('Downloading ' + url)
         req = urllib.request.Request(url)
         req.add_header('User-Agent', user_agent)
 
-        filename = getDocsPath(True) + '/' + name + '.tar.gz.downloading'
+        filename = getDocsPath(True) + '/' + \
+            languageForPath + '.tar.gz.downloading'
         http_proxy = getSetting('http_proxy')
         if http_proxy:
             proxy_handler = urllib.request.ProxyHandler({'http': http_proxy})
@@ -350,11 +364,11 @@ def installLanguage(language=None):
                     # report progress
                     percent = readsofar * 1e2 / totalsize  # assume totalsize > 0
                     sublime.status_message(
-                        package_name + ': %.0f%% downloading %s' % (percent, name,))
+                        package_name + ': %.0f%% downloading %s' % (percent, languageForPath,))
                 else:
                     kb = readsofar / 1024
                     sublime.status_message(
-                        package_name + ': %.0f KB downloading %s' % (kb, name,))
+                        package_name + ': %.0f KB downloading %s' % (kb, languageForPath,))
         finally:
             outputfile.close()
             if totalsize and readsofar != totalsize:
@@ -368,60 +382,52 @@ def installLanguage(language=None):
     except Exception as e:
         err = e.__class__.__name__
 
+    print("Download success")
+
     if not err:
-        newname = getDocsPath(True) + '/' + name + '.tar.gz'
+        newname = getDocsPath(True) + '/' + languageForPath + '.tar.gz'
         if os.path.isfile(newname):
             os.unlink(newname)
         os.rename(filename, newname)
-        if extract(newname, getDocsPath(True) + '/' + name):
+        print("Extract " + newname)
+        if extract(newname, getDocsPath(True) + '/' + languageForPath):
             global installed_languages
-            installed_languages[language] = {
+            installed_languages[languageWithVersion] = {
                 "mtime": time.time(),
-                "name": language,
-                "slug": name
+                "name": languageWithVersion,
+                "slug": languageForPath
             }
-            # os.unlink(newname)
+            os.unlink(newname)
             saveInstalledLanguages()
             return True
         else:
             err = 'Extract file error'
 
     print(err)
-    sublime.message_dialog('Language ' + name +
+    sublime.message_dialog('LanguageVersion ' + languageWithVersion +
                            ' install failed. Please try again.')
     return False
-
-
-def installLanguageAndSetAsDefault():
-    global selected_language_version, selected_language_type
-    if not selected_language_version or not selected_language_type:
-        return False
-    if installLanguage(language=None):
-        setLanguageDefaultVersion(
-            selected_language_type, selected_language_version)
 
 
 class DevdocsShowDefinitionCommand(sublime_plugin.TextCommand):
     match_languages = None
 
-    def run(self, edit, event=None, symbol=None, force=False):
-        global input_symbol
+    def want_event(self):
+        return True
+
+    def run(self, edit, event=None, symbol=None):
         language, language_type = parseViewLanguage(self.view)
         print("Current view language:" + language)
         if not isInstalled(language, True):
             self.view.run_command("devdocs_set_default_version")
             return False
         if symbol == None:
-            if input_symbol != None:
-                symbol = input_symbol
-                input_symbol = None
+            if event:
+                pt = self.view.window_to_text((event["x"], event["y"]))
             else:
-                if event:
-                    pt = self.view.window_to_text((event["x"], event["y"]))
-                else:
-                    pt = self.view.sel()[0]
-                symbol, locations = sublime_symbol.symbol_at_point(
-                    self.view, pt)
+                pt = self.view.sel()[0]
+            symbol, locations = sublime_symbol.symbol_at_point(
+                self.view, pt)
         print("Looking for symbol " + symbol + " in " + language)
         symbolInfo = getSymbolInIndex(symbol, language)
         if not symbolInfo:
@@ -513,18 +519,20 @@ class DevdocsShowDefinitionCommand(sublime_plugin.TextCommand):
         # content = '<body class="_app _mobile" style="max-width:700px"><style>' + sublime.load_resource(getPackagePath() + '/style-2.css') + \
         #     '</style><div class="_container" style="display: block"><div class="_content"><div class="_page _php">' + \
         #     content + "</div></div></div></body>"
-        # content = '<style>' + sublime.load_resource(getPackagePath() + '/style.css') + \
-        #     '</style><div id="outer"><div id="container">' + content + "</div></div>"
+        if getSetting("use_style"):
+            print("Use custom style")
+            content = '<style>' + sublime.load_resource(getPackagePath() + '/style.css') + \
+                '</style><div id="outer"><div id="container">' + content + "</div></div>"
         content = re.sub('<strong><code>([A-Z_]+)</code></strong>',
                          '<strong><code><a class="constant" href="constant.\\1">\\1</a></code></strong>', content)
-        print(content)
+        # print(content)
         return content
 
 
 class DevdocsSearchSymbolCommand(sublime_plugin.TextCommand):
     allSymbol = None
 
-    def run(self, edit, event=None, symbol=None, force=False):
+    def run(self, edit):
         language, language_type = parseViewLanguage(self.view)
         allSymbol = getAllSymbol(language)
         self.allSymbol = allSymbol
@@ -538,15 +546,16 @@ class DevdocsSearchSymbolCommand(sublime_plugin.TextCommand):
     def on_select(self, selectKey):
         if selectKey == -1:
             return False
-        global input_symbol
-        input_symbol = self.allSymbol[selectKey]
-        self.view.run_command("devdocs_show_definition")
+        self.view.run_command("devdocs_show_definition", {
+                              "symbol": self.allSymbol[selectKey]})
 
 
 class DevdocsSetDefaultVersion(sublime_plugin.TextCommand):
     matchResult = None
+    selected_language_type = None
+    selected_language_version = None
 
-    def run(self, edit, event=None, symbol=None, force=False):
+    def run(self, edit):
         language, language_type = parseViewLanguage(self.view)
         matchResult = searchInAllLanguages(language_type, 'set_as_default')
 
@@ -567,16 +576,59 @@ class DevdocsSetDefaultVersion(sublime_plugin.TextCommand):
         if selected_value[1] == installed_tip['set_as_default']:
             setLanguageDefaultVersion(language_type, selected_value[0])
         else:
-            global selected_language_type, selected_language_version
             selected_language_type = language_type
             selected_language_version = selected_value[0]
-            sublime.set_timeout_async(installLanguageAndSetAsDefault, 0)
+            sublime.set_timeout_async(self.installLanguageAndSetAsDefault, 0)
+
+    def installLanguageAndSetAsDefault(self):
+        if not self.selected_language_version or not self.selected_language_type:
+            return False
+        if installLanguage(self.selected_language_version):
+            setLanguageDefaultVersion(
+                self.selected_language_type, self.selected_language_version)
+
+
+class DevdocsSetSyntaxAlias(sublime_plugin.TextCommand):
+    all_languages_distinct = None
+    selected_language_version = None
+
+    def run(self, edit):
+        all_languages_distinct = self.getAllLanguagesDistinct()
+        self.all_languages_distinct = all_languages_distinct
+        print(all_languages_distinct)
+        sublime.Window.show_quick_panel(
+            sublime.active_window(),
+            all_languages_distinct,
+            on_select=self.on_select
+        )
+
+    def getAllLanguagesDistinct(self):
+        if self.all_languages_distinct == None:
+            self.all_languages_distinct = []
+            tmp_map = {}
+            languages = getAllLanguages()
+            for key, language in enumerate(languages):
+                languageName = language.split("@", 1)[0]
+                if not tmp_map.get(languageName):
+                    self.all_languages_distinct.append(
+                        [languageName, "Set now syntax alias this language"])
+                    tmp_map[languageName] = True
+
+        return self.all_languages_distinct
+
+    def on_select(self, selectKey):
+        if selectKey == -1:
+            return False
+        language = self.all_languages_distinct[selectKey]
+        print('Selected ' + language[0])
+        setSyntaxAlias(self.view.settings().get('syntax'), language[0])
 
 
 class DevdocsShowAllLanguages(sublime_plugin.TextCommand):
     all_languages_display = None
+    selected_language_version = None
 
-    def run(self, edit, event=None, symbol=None, force=False):
+    def run(self, edit):
         all_languages_display = checkAllLanguagesForDisplay()
         self.all_languages_display = all_languages_display
         print(all_languages_display)
@@ -589,15 +641,16 @@ class DevdocsShowAllLanguages(sublime_plugin.TextCommand):
     def on_select(self, selectKey):
         if selectKey == -1:
             return False
-        print(selectKey)
         language = self.all_languages_display[selectKey]
         print('Selected ' + language[0])
         if language[1] == installed_tip['toggle']:
             uninstallLanguage(language[0])
         else:
-            global selected_language_version
-            selected_language_version = language[0]
-            sublime.set_timeout_async(installLanguage, 0)
+            self.selected_language_version = language[0]
+            sublime.set_timeout_async(self.installLanguage, 0)
+
+    def installLanguage(self):
+        installLanguage(self.selected_language_version)
 
 
 class PopupHTMLParser(HTMLParser):

@@ -3,4 +3,5 @@
     {"caption": "Devdocs: Search Symbol", "command": "devdocs_search_symbol"},
     {"caption": "Devdocs: All Languages", "command": "devdocs_show_all_languages"},
     {"caption": "Devdocs: Set Default Version", "command": "devdocs_set_default_version"},
+    {"caption": "Devdocs: Set Syntax Alias", "command": "devdocs_set_syntax_alias"},
 ]
