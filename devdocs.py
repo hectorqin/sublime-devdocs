@@ -576,8 +576,8 @@ class DevdocsSetDefaultVersion(sublime_plugin.TextCommand):
         if selected_value[1] == installed_tip['set_as_default']:
             setLanguageDefaultVersion(language_type, selected_value[0])
         else:
-            selected_language_type = language_type
-            selected_language_version = selected_value[0]
+            self.selected_language_type = language_type
+            self.selected_language_version = selected_value[0]
             sublime.set_timeout_async(self.installLanguageAndSetAsDefault, 0)
 
     def installLanguageAndSetAsDefault(self):
