@@ -11,7 +11,7 @@ import urllib
 from Default import symbol as sublime_symbol
 from html.parser import HTMLParser
 
-package_name = "Devdocs"
+package_name = "Sublime Devdocs"
 setting_file = package_name + '.sublime-settings'
 entities = {
     "iso": False,
