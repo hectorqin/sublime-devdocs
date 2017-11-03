@@ -79,7 +79,20 @@ Or install it by downloading the zip, extract it and put it into the package dir
 
 2. If you want to modify the setting, please use menu item `Preferences → Package Settings → Devdocs offline → Settings – User`
 
+***
 
+### keys
+
+    ```js
+    [
+        { "keys": ["ctrl+alt+d"], "command": "devdocs_show_definition"},
+        { "keys": ["ctrl+alt+s"], "command": "devdocs_search_symbol"},
+    ]
+    ```
+
+### License
+
+[Apache](all/COPYING)
 
 <!-- Links -->
 
