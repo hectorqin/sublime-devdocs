@@ -10,26 +10,26 @@
                 "id": "package-settings",
                 "children": [
                     {
-                        "caption": "Devdocs",
+                        "caption": "Devdocs offline",
                         "children": [
                             {
                                 "caption": "Settings – Default",
                                 "args": {
-                                    "file": "${packages}/Devdocs/Devdocs.sublime-settings"
+                                    "file": "${packages}/Devdocs offline/Devdocs offline.sublime-settings"
                                 },
                                 "command": "open_file"
                             },
                             {
                                 "caption": "Settings – User",
                                 "args": {
-                                    "file": "${packages}/User/Devdocs.sublime-settings"
+                                    "file": "${packages}/User/Devdocs offline.sublime-settings"
                                 },
                                 "command": "open_file"
                             },
                             {
                                 "caption": "Key Bindings – Default",
                                 "args": {
-                                    "file": "${packages}/Devdocs/Default.sublime-keymap"
+                                    "file": "${packages}/Devdocs offline/Default.sublime-keymap"
                                 },
                                 "command": "open_file"
                             },

@@ -2,14 +2,15 @@
     "schema_version": "3.0.0",
     "packages": [
         {
-            "name": "Sublime Devdocs",
-            "description": "Quick search symbol in devdocs plugin for Sublime Text 3",
+            "name": "Devdocs offline",
+            "description": "Quick search symbol in devdocs offline plugin for Sublime Text 3",
             "author": "hectorqin",
             "details": "https://github.com/hectorqin/sublime-devdocs",
             "issues": "https://github.com/hectorqin/sublime-devdocs",
             "labels": [
                 "symbol",
                 "devdocs",
+                "offline",
                 "document"
             ],
             "releases": [
