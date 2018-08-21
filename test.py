@@ -11,8 +11,10 @@ language_slug_alias_default = {
     "support_tables": "browser_support_tables",
 }
 
+
 def getSetting(key, default=None):
     return default
+
 
 def getLanguageSlug(language):
     global language_slug_alias_default
@@ -22,33 +24,34 @@ def getLanguageSlug(language):
         return language_slug_alias.get(language)
     if language[-1] == '@':
         language = language[:-1]
-    v = language.split('@', 1);
+    v = language.split('@', 1)
     name = v[0].lower()
     if len(v) == 1:
         return name
-    version = v[1].lower().replace('@', '~').replace('+', 'p').replace('#', 's')
+    version = v[1].lower().replace(
+        '@', '~').replace('+', 'p').replace('#', 's')
     version = re.sub(r"[^a-z0-9\_\.]", "_", version)
     return name + "~" + version
 
+
 def getResponseCode(path):
     url = 'http://dl.devdocs.io/' + path + '.tar.gz'
-    response =  urllib.urlopen(url)
+    response = urllib.urlopen(url)
     code = response.getcode()
     return code
 
+
 def main():
-    badL=[]
-    with open("./languages.json",'r') as content:
+    badL = []
+    with open("./languages.json", 'r') as content:
         languages = json.load(content)
         for lang in languages:
             path = getLanguageSlug(lang)
             code = getResponseCode(path)
-            print "%s ToPath: %s ResponseCode: %d" % (lang, path, code)
+            print("%s ToPath: %s ResponseCode: %d" % (lang, path, code))
             if code != 200:
                 badL.append((lang, path, code))
-    
     print(badL)
-    
 
 if __name__ == "__main__":
     main()
