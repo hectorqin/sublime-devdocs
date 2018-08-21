@@ -17,8 +17,13 @@ entities = {
     "iso": False,
     "html": False
 }
-language_alias = {
-    "jquery_core": "jquery"
+language_slug_alias_default = {
+    "apache": "apache_http_server",
+    "jquery_core": "jquery",
+    "jquery_mobile": "jquerymobile",
+    "jquery_ui": "jqueryui",
+    "nokogiri2": "nokogiri",
+    "support_tables": "browser_support_tables",
 }
 all_languages = None
 all_languages_display = None
@@ -80,7 +85,7 @@ def checkAllLanguagesForDisplay(update=False, tipType='toggle'):
 
     installed_lgs = getAllInstalledLanguages(update)
     for key, language in enumerate(all_languages_display):
-        if installed_lgs.get(parseLanguageName(language[0])) != None:
+        if installed_lgs.get(getLanguageSlug(language[0])) != None:
             all_languages_display[key][1] = installed_tip[tipType]
 
     return all_languages_display
@@ -116,7 +121,7 @@ def saveInstalledLanguages():
 
 def isInstalled(language, update=False):
     installed_lgs = getAllInstalledLanguages(update)
-    if installed_lgs.get(parseLanguageName(language)) != None:
+    if installed_lgs.get(getLanguageSlug(language)) != None:
         return True
     else:
         return False
@@ -179,17 +184,21 @@ def getLanguagePath(language, absolute=False):
     return getDocsPath(absolute) + '/' + language
 
 
-def parseLanguageName(language, forPath=False):
-    global language_alias
-    if language_alias.get(language):
-        return language_alias.get(language)
+def getLanguageSlug(language):
+    global language_slug_alias_default
+    language_slug_alias = language_slug_alias_default.copy()
+    language_slug_alias.update(getSetting('language_slug_alias', {}))
+    if language_slug_alias.get(language):
+        return language_slug_alias.get(language)
     if language[-1] == '@':
         language = language[:-1]
-    if forPath:
-        return language.replace('@', '~')
-    else:
-        return language
-
+    v = language.split('@', 1);
+    name = v[0].lower()
+    if len(v) == 1:
+        return name
+    version = v[1].lower().replace('@', '~').replace('+', 'p').replace('#', 's')
+    version = re.sub(r"[^a-z0-9\_\.]", "_", version)
+    return name + "~" + version
 
 def parseViewLanguage(view):
     syntax = view.settings().get('syntax')
@@ -216,7 +225,7 @@ def getLanguageIndex(language):
 
 
 def getAllSymbol(language):
-    language = parseLanguageName(language, True)
+    language = getLanguageSlug(language)
     indexArr = getLanguageIndex(language)
     print(indexArr)
     allSymbol = []
@@ -226,7 +235,7 @@ def getAllSymbol(language):
 
 
 def getSymbolInIndex(symbol, language):
-    language = parseLanguageName(language, True)
+    language = getLanguageSlug(language)
     indexArr = getLanguageIndex(language)
     for key, _symbol in enumerate(indexArr):
         if symbol == _symbol['name']:
@@ -237,7 +246,7 @@ def getSymbolInIndex(symbol, language):
 
 
 def getSymbolDescriptionFromHtml(path, language):
-    language = parseLanguageName(language, True)
+    language = getLanguageSlug(language)
     pathinfo = path.split('#')
     html_path = getLanguagePath(language) + '/' + pathinfo[0] + '.html'
     print("Load From " + html_path)
@@ -298,7 +307,7 @@ def extract(tar_path, target_path, mode='r:gz'):
 
 
 def uninstallLanguage(languageWithVersion):
-    languageForPath = parseLanguageName(languageWithVersion, True)
+    languageForPath = getLanguageSlug(languageWithVersion, True)
     print('Uninstall languageWithVersion ' + languageWithVersion)
     language_path = getDocsPath(True) + "/" + languageForPath
     if os.path.isdir(language_path):
@@ -316,10 +325,9 @@ def installLanguage(languageWithVersion):
 
     uninstallLanguage(languageWithVersion)
 
-    languageWithVersion = parseLanguageName(languageWithVersion)
+    languageForPath = getLanguageSlug(languageWithVersion)
     print('Install languageWithVersion ' + languageWithVersion)
 
-    languageForPath = languageWithVersion.replace('@', '~')
     err = None
     try:
         url = 'http://dl.devdocs.io/' + languageForPath + '.tar.gz'

@@ -73,6 +73,10 @@ Or install it by downloading the zip, extract it and put it into the package dir
         // Usually, this plugin parse the language type from the syntax setting of the view, this may be not accurate, you can set this configuration to set the syntax alias
         "syntax_alias":{
 
+        },
+        // languageWithVersion as key, languageForPath as value. You can set it When the path is wrong.
+        "language_slug_alias":{
+
         }
     }
     ```
