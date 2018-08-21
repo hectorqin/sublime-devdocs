@@ -87,6 +87,8 @@ def checkAllLanguagesForDisplay(update=False, tipType='toggle'):
     for key, language in enumerate(all_languages_display):
         if installed_lgs.get(getLanguageSlug(language[0])) != None:
             all_languages_display[key][1] = installed_tip[tipType]
+        else:
+            all_languages_display[key][1] = uninstalled_tip[tipType]
 
     return all_languages_display
 
@@ -192,13 +194,15 @@ def getLanguageSlug(language):
         return language_slug_alias.get(language)
     if language[-1] == '@':
         language = language[:-1]
-    v = language.split('@', 1);
+    v = language.split('@', 1)
     name = v[0].lower()
     if len(v) == 1:
         return name
-    version = v[1].lower().replace('@', '~').replace('+', 'p').replace('#', 's')
+    version = v[1].lower().replace(
+        '@', '~').replace('+', 'p').replace('#', 's')
     version = re.sub(r"[^a-z0-9\_\.]", "_", version)
     return name + "~" + version
+
 
 def parseViewLanguage(view):
     syntax = view.settings().get('syntax')
@@ -307,13 +311,13 @@ def extract(tar_path, target_path, mode='r:gz'):
 
 
 def uninstallLanguage(languageWithVersion):
-    languageForPath = getLanguageSlug(languageWithVersion, True)
+    languageForPath = getLanguageSlug(languageWithVersion)
     print('Uninstall languageWithVersion ' + languageWithVersion)
     language_path = getDocsPath(True) + "/" + languageForPath
     if os.path.isdir(language_path):
         shutil.rmtree(language_path)
-    if installed_languages.get(languageWithVersion) != None:
-        installed_languages.pop(languageWithVersion)
+    if installed_languages.get(languageForPath) != None:
+        installed_languages.pop(languageForPath)
     if languages_index.get(languageWithVersion) != None:
         languages_index.pop(languageWithVersion)
     saveInstalledLanguages()
@@ -400,7 +404,7 @@ def installLanguage(languageWithVersion):
         print("Extract " + newname)
         if extract(newname, getDocsPath(True) + '/' + languageForPath):
             global installed_languages
-            installed_languages[languageWithVersion] = {
+            installed_languages[languageForPath] = {
                 "mtime": time.time(),
                 "name": languageWithVersion,
                 "slug": languageForPath
