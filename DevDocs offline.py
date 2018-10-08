@@ -299,16 +299,22 @@ def decodeEntity(xml, category='iso'):
     return xml
 
 
-def extract(tar_path, target_path, mode='r:gz'):
-    try:
-        tar = tarfile.open(tar_path, mode)
-        tar.extractall(target_path)
-        tar.close()
-        return True
-    except Exception as e:
-        print('Extract fail ' + e.__class__.__name__)
-        return False
+# def extract(tar_path, target_path, mode='r:gz'):
+#     try:
+#         tar = tarfile.open(tar_path, mode)
+#         tar.extractall(target_path)
+#         tar.close()
+#         return True
+#     except Exception as e:
+#         print('Extract fail ' + e.__class__.__name__)
+#         return False
 
+# Don't catch error
+def extract(tar_path, target_path, mode='r:gz'):
+    tar = tarfile.open(tar_path, mode)
+    tar.extractall(target_path)
+    tar.close()
+    return True
 
 def uninstallLanguage(languageWithVersion):
     languageForPath = getLanguageSlug(languageWithVersion)
